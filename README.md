@@ -19,11 +19,17 @@ lcsc C2453576 --use-cache
 not wipe the library.
 
 ### `lcsc <LCSC_ID> --enrich`  (or `lcsc-enrich <LCSC_ID>`)
-After import, looks the part up on lcsc.com via `claude -p` and proposes a
-cleaner `Description` if the current one is weak/empty. **Preview only — never
+After import, asks `claude -p` to reformat what's *already in the imported
+symbol* (manufacturer, MPN, footprint name, ki_keywords, etc.) into a cleaner
+`Description` if the current one is weak or missing. **Preview only — never
 writes by default.** Shows a unified diff; pass `--apply` to actually patch the
-file. Other weak fields (`ki_keywords`, `Value`) are surfaced as warnings with a
+file. Other weak fields (`ki_keywords`, `Value`) surface as warnings with a
 copy-paste follow-up command, not auto-changed.
+
+The prompt explicitly forbids web lookups and tells the model to use the
+footprint name as the source of truth for body dimensions. This trades off some
+expressiveness (no decoded specs the imported data doesn't already contain) for
+fewer hallucinations.
 
 ```
 lcsc-enrich C2453576              # preview
