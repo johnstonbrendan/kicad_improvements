@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Transparent wrapper around easyeda2kicad. Passes everything through to the
+# real binary, but on --help / -h appends a reminder that the `lcsc` shortcut
+# exists with Brendan's usual defaults baked in.
+set -uo pipefail
+
+REAL=/Users/brendan/.platformio/penv/bin/easyeda2kicad
+
+show_tip=0
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help) show_tip=1 ;;
+  esac
+done
+
+"$REAL" "$@"
+status=$?
+
+if [[ $show_tip -eq 1 ]]; then
+  cat <<'EOF'
+
+────────────────────────────────────────────────────────────
+Tip: `lcsc <LCSC_ID>` is a shortcut that calls easyeda2kicad with
+your usual flags (--full --overwrite --output …easyeda.kicad_sym).
+Add `--enrich` to also preview AI-cleaned descriptions (no writes).
+See: ~/Desktop/coding_playground/claude_code/kicad_improvements
+────────────────────────────────────────────────────────────
+EOF
+fi
+
+exit $status

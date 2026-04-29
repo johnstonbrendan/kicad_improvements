@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Shortcut for easyeda2kicad with Brendan's defaults:
+#   --full, --overwrite, output → KICAD9_3RD_PARTY/libraries/easyeda.kicad_sym
+#
+# Usage:
+#   lcsc C25804 [C12345 ...]              one or more LCSC IDs
+#   lcsc C25804 --use-cache               extra easyeda2kicad flags forward through
+#   lcsc C25804 --enrich                  also propose AI description cleanup (preview, no writes)
+set -euo pipefail
+
+KICAD9_3RD_PARTY="${KICAD9_3RD_PARTY:-/Users/brendan/Documents/KiCad/9.0/3rdparty}"
+OUTPUT="${KICAD9_3RD_PARTY}/libraries/easyeda.kicad_sym"
+
+if [[ $# -eq 0 ]]; then
+  cat >&2 <<'EOF'
+usage: lcsc <LCSC_ID> [LCSC_ID ...] [--enrich] [extra easyeda2kicad flags]
+
+Imports symbol + footprint + 3D model into easyeda.kicad_sym.
+  --enrich     after import, run lcsc-enrich on each ID (preview only, no writes)
+EOF
+  exit 1
+fi
+
+ids=()
+extra=()
+enrich=0
+for arg in "$@"; do
+  case "$arg" in
+    --enrich) enrich=1 ;;
+    -*)       extra+=("$arg") ;;
+    *)        ids+=("$arg") ;;
+  esac
+done
+
+if [[ ${#ids[@]} -eq 0 ]]; then
+  echo "lcsc: no LCSC IDs given" >&2
+  exit 1
+fi
+
+easyeda2kicad \
+  --lcsc_id "${ids[@]}" \
+  --full \
+  --overwrite \
+  --output "$OUTPUT" \
+  ${extra[@]+"${extra[@]}"}
+
+if [[ $enrich -eq 1 ]]; then
+  for id in "${ids[@]}"; do
+    echo
+    echo "── enriching $id ──"
+    lcsc-enrich "$id" || echo "lcsc-enrich failed for $id (continuing)" >&2
+  done
+fi
